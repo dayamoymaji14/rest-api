@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+
+const http = require('http');
+const app = require('../app');
+const db = require('../models/connections/mongodb');
+
+const onError = (error) => {
+    if(error.syscall !== 'listen') {
+        throw error;
+    }
+    const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+    switch (error.code) {
+        case 'EACCS':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+
+        case 'EASSRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+
+        default:
+            throw error;
+    }
+};
+
+const onListening = () => {
+    const addr = server.address();
+    const bind = typeof addr == 'string' ? 'Pipe ' + addr : 'Port ' + addr.port;
+    console.log('Server started');
+    console.log(`Listening on ${bind}`);
+};
+
+// Get port from env and set in express app
+const port = process.env.PORT || 8001;
+app.set('port', port);
+
+// Create server
+const server = http.createServer(app);
+
+console.log('Starting server...');
+
+db.connect().then(() => {
+    server.listen(port);
+    server.on('error', onError);
+    server.on('listening', onListening);
+}).catch((error) => {
+    console.error(error);
+});
